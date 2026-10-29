@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1120">
+    <meta name="description" content="Organize sua carteira de ações e FIIs e acompanhe os resultados informados.">
+    <title>SimulaBolsa — Minha carteira</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./assets/css/styles.css">
+    <script defer src="./assets/js/formatters.js"></script>
+    <script defer src="./assets/js/portfolio.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html" aria-label="SimulaBolsa, página do simulador">
+        <span class="brand-mark" aria-hidden="true">↗</span>
+        <span>Simula<span class="brand-accent">Bolsa</span></span>
+      </a>
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a href="./index.html">Simulador</a>
+        <a href="./carteira.html" aria-current="page">Carteira</a>
+      </nav>
+      <span class="local-badge"><span aria-hidden="true">●</span> DADOS NESTE NAVEGADOR</span>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">ACOMPANHE SEUS ATIVOS</p>
+        <h1 id="page-title">Sua carteira,<br><em>com visão clara.</em></h1>
+        <p class="hero-copy">Organize ações e FIIs, atualize os preços manualmente e acompanhe o resultado da sua carteira.</p>
+      </section>
+
+      <section class="portfolio-summary" aria-label="Resumo da carteira" aria-live="polite">
+        <article class="metric-card">
+          <h2>Capital investido</h2>
+          <strong id="totalInvested">R$ 0,00</strong>
+          <p id="positionCount">Nenhuma posição cadastrada</p>
+        </article>
+        <article class="metric-card">
+          <h2>Valor atual</h2>
+          <strong id="currentValue">R$ 0,00</strong>
+          <p>Com base nos preços informados</p>
+        </article>
+        <article class="metric-card">
+          <h2>Resultado total</h2>
+          <strong id="totalResult">R$ 0,00</strong>
+          <p id="totalReturn">0,00% sobre o capital investido</p>
+        </article>
+      </section>
+
+      <section class="panel allocation-panel" aria-labelledby="allocation-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">VISÃO DA CARTEIRA</p>
+            <h2 id="allocation-title">Distribuição por tipo</h2>
+          </div>
+        </div>
+        <div class="allocation-row">
+          <div class="allocation-label"><span>Ações</span><strong id="stocksValue">R$ 0,00</strong><small id="stocksShare">0% da carteira</small></div>
+          <div class="allocation-meter" aria-hidden="true"><span id="stocksMeter"></span></div>
+        </div>
+        <div class="allocation-row">
+          <div class="allocation-label"><span>FIIs</span><strong id="fiisValue">R$ 0,00</strong><small id="fiisShare">0% da carteira</small></div>
+          <div class="allocation-meter allocation-meter-fii" aria-hidden="true"><span id="fiisMeter"></span></div>
+        </div>
+      </section>
+
+      <div class="portfolio-layout">
+        <section class="panel position-panel" aria-labelledby="position-form-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">01 / POSIÇÃO</p>
+              <h2 id="position-form-title">Adicionar ativo</h2>
+            </div>
+          </div>
+
+          <form id="positionForm" novalidate>
+            <input id="positionId" name="positionId" type="hidden">
+            <div class="position-fields">
+              <label for="ticker">Ativo / ticker
+                <input id="ticker" name="ticker" type="text" maxlength="12" placeholder="Ex.: ITUB4" autocomplete="off" required>
+              </label>
+              <label for="assetType">Tipo de ativo
+                <select id="assetType" name="assetType">
+                  <option value="stocks">Ação</option>
+                  <option value="fiis">FII</option>
+                </select>
+              </label>
+              <label for="quantity">Quantidade
+                <input id="quantity" name="quantity" type="number" min="0.0001" step="0.0001" placeholder="0" inputmode="decimal" required>
+              </label>
+              <label for="averagePrice">Preço médio (R$)
+                <input id="averagePrice" name="averagePrice" type="number" min="0.01" step="0.01" placeholder="0,00" inputmode="decimal" required>
+              </label>
+              <label for="currentPrice">Preço atual (R$)
+                <input id="currentPrice" name="currentPrice" type="number" min="0.01" step="0.01" placeholder="0,00" inputmode="decimal" required>
+              </label>
+            </div>
+            <p class="field-help">Se o mesmo ticker e tipo já estiverem cadastrados, as quantidades serão consolidadas com preço médio ponderado.</p>
+            <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
+            <div class="actions position-actions">
+              <button id="cancelEdit" class="button button-secondary" type="button" hidden>Cancelar edição</button>
+              <button id="savePosition" class="button button-primary" type="submit">Adicionar posição</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel holdings-panel" aria-labelledby="holdings-title">
+          <div class="section-heading holdings-heading">
+            <div>
+              <p class="eyebrow">02 / ATIVOS CADASTRADOS</p>
+              <h2 id="holdings-title">Minha carteira</h2>
+            </div>
+            <span id="storageBadge" class="storage-badge">Salva neste navegador</span>
+          </div>
+
+          <p class="field-help holdings-help">Atualize o preço atual pelo botão “Editar”. As cotações não são buscadas automaticamente.</p>
+          <div id="emptyState" class="empty-state" hidden>
+            <span class="empty-icon" aria-hidden="true">＋</span>
+            <h3>Sua carteira está vazia</h3>
+            <p>Cadastre uma posição para começar a acompanhar seus ativos.</p>
+          </div>
+          <div id="holdingsTableWrap" class="table-scroll" hidden>
+            <table class="holdings-table">
+              <thead>
+                <tr>
+                  <th scope="col">Ativo</th>
+                  <th scope="col">Qtd.</th>
+                  <th scope="col">Preço médio</th>
+                  <th scope="col">Preço atual</th>
+                  <th scope="col">Investido</th>
+                  <th scope="col">Valor atual</th>
+                  <th scope="col">Resultado</th>
+                  <th scope="col"><span class="visually-hidden">Ações</span></th>
+                </tr>
+              </thead>
+              <tbody id="holdingsBody"></tbody>
+            </table>
+          </div>
+          <p id="storageMessage" class="storage-message" aria-live="polite">Os dados ficam neste navegador e não são enviados para um servidor.</p>
+        </section>
+      </div>
+
+      <aside class="disclaimer" aria-labelledby="portfolio-note-title">
+        <span class="info-icon" aria-hidden="true">i</span>
+        <div>
+          <h2 id="portfolio-note-title">Sobre os valores da carteira</h2>
+          <p>Os resultados usam os preços e quantidades informados por você. Não incluem taxas, impostos, dividendos, rendimentos de FIIs nem cotações em tempo real. Use os dados como organização pessoal, não como apuração fiscal ou recomendação de investimento.</p>
+        </div>
+      </aside>
+
+      <footer class="site-footer">
+        <span>© <span id="year"></span> SimulaBolsa</span>
+        <span>Seus dados ficam salvos neste navegador.</span>
+      </footer>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

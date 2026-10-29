@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1120">
+    <meta name="description" content="Simule compras e vendas de ações e FIIs, estime impostos e compare cenários de preço.">
+    <meta property="og:title" content="SimulaBolsa — simulador de investimentos">
+    <meta property="og:description" content="Planeje operações com ações e FIIs com estimativas de resultado, imposto e cenários.">
+    <meta property="og:type" content="website">
+    <title>SimulaBolsa — Simulador de investimentos</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./assets/css/styles.css">
+    <script defer src="./assets/js/calculator.js"></script>
+    <script defer src="./assets/js/formatters.js"></script>
+    <script defer src="./assets/js/main.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html" aria-label="SimulaBolsa, página do simulador">
+        <span class="brand-mark" aria-hidden="true">↗</span>
+        <span>Simula<span class="brand-accent">Bolsa</span></span>
+      </a>
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a href="./index.html" aria-current="page">Simulador</a>
+        <a href="./carteira.html">Carteira</a>
+      </nav>
+      <span class="local-badge"><span aria-hidden="true">●</span> SIMULAÇÃO LOCAL</span>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">PLANEJE ANTES DE INVESTIR</p>
+        <h1 id="page-title">Seu próximo movimento,<br><em>feito com números.</em></h1>
+        <p class="hero-copy">Calcule quantidade, valor de venda, lucro ou prejuízo e uma estimativa de imposto — sem planilha.</p>
+        <ul class="feature-list" aria-label="Recursos">
+          <li>Ações</li>
+          <li>FIIs</li>
+          <li>Compra e venda</li>
+          <li>IR estimado</li>
+        </ul>
+      </section>
+
+      <div class="dashboard">
+        <section class="panel configuration" aria-labelledby="configuration-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">01 / CONFIGURAÇÃO</p>
+              <h2 id="configuration-title">Monte sua operação</h2>
+            </div>
+            <span class="heading-icon" aria-hidden="true">⌘</span>
+          </div>
+
+          <fieldset class="control-group">
+            <legend>Tipo de ativo</legend>
+            <div class="asset-options">
+              <label class="choice-card">
+                <input type="radio" name="asset" value="stocks" checked>
+                <span class="choice-copy"><b>Ações</b><small>MGLU3, ITUB4...</small></span>
+              </label>
+              <label class="choice-card">
+                <input type="radio" name="asset" value="fiis">
+                <span class="choice-copy"><b>Fundos imobiliários</b><small>GGRC11, MXRF11...</small></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="number-grid">
+            <label for="capital">Capital disponível (R$)
+              <input id="capital" name="capital" type="number" min="0" step="0.01" value="1000" inputmode="decimal">
+            </label>
+            <label for="buy">Preço de compra (R$)
+              <input id="buy" name="buy" type="number" min="0" step="0.01" value="5.64" inputmode="decimal">
+            </label>
+            <label for="sell">Preço de venda (R$)
+              <input id="sell" name="sell" type="number" min="0" step="0.01" value="8" inputmode="decimal">
+            </label>
+            <label for="costs">Custos da operação (R$)
+              <input id="costs" name="costs" type="number" min="0" step="0.01" value="0" inputmode="decimal" aria-describedby="costs-help">
+            </label>
+          </div>
+          <p class="field-help" id="costs-help">Some aqui corretagem, emolumentos e outros custos de compra e venda.</p>
+
+          <fieldset class="control-group operation-group">
+            <legend>Tipo de operação</legend>
+            <div class="operation-options">
+              <label class="choice-card">
+                <input type="radio" name="operation" value="common" checked>
+                <span class="choice-copy"><b>Operação comum</b><small>Compra e venda em dias diferentes</small></span>
+              </label>
+              <label class="choice-card">
+                <input type="radio" name="operation" value="dayTrade">
+                <span class="choice-copy"><b>Day trade</b><small>Compra e venda no mesmo dia</small></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="conditional-field" id="stockFields">
+            <label for="otherSales">Outras vendas de ações no mês (R$)
+              <input id="otherSales" name="otherSales" type="number" min="0" step="0.01" value="0" inputmode="decimal" aria-describedby="sales-help">
+            </label>
+            <p class="field-help" id="sales-help">Usado apenas para verificar a faixa de isenção mensal. Informe o total das outras vendas comuns de ações.</p>
+          </div>
+
+          <div class="loss-box">
+            <label class="checkbox-label" for="useLoss">
+              <input id="useLoss" name="useLoss" type="checkbox">
+              <span>Tenho prejuízo anterior compensável</span>
+            </label>
+            <div class="conditional-field loss-field" id="lossField" hidden>
+              <label for="loss">Prejuízo elegível para esta operação (R$)
+                <input id="loss" name="loss" type="number" min="0" step="0.01" value="0" inputmode="decimal" aria-describedby="loss-help">
+              </label>
+              <p class="field-help" id="loss-help">Use apenas prejuízos que possam ser compensados com a mesma categoria e modalidade.</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="reset" class="button button-secondary" type="button">↺ Restaurar exemplo</button>
+            <button id="copy" class="button button-primary" type="button">Copiar resumo <span aria-hidden="true">↗</span></button>
+          </div>
+        </section>
+
+        <div class="results-column">
+          <section class="panel results-panel" aria-labelledby="results-title" aria-live="polite" aria-atomic="false">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">02 / RESULTADO</p>
+                <h2 id="results-title">Resumo da operação</h2>
+              </div>
+              <span class="heading-icon heading-icon-positive" aria-hidden="true">↗</span>
+            </div>
+
+            <div class="metrics-grid">
+              <article class="metric-card">
+                <h3>Quantidade estimada</h3>
+                <strong id="quantity">177</strong>
+                <p>unidades inteiras</p>
+              </article>
+              <article class="metric-card">
+                <h3>Valor aplicado</h3>
+                <strong id="invested">R$ 998,28</strong>
+                <p id="remaining">R$ 1,72 não investidos</p>
+              </article>
+              <article class="metric-card">
+                <h3>Valor da venda</h3>
+                <strong id="revenue">R$ 1.416,00</strong>
+                <p>antes de custos e impostos</p>
+              </article>
+              <article class="metric-card">
+                <h3>IR estimado</h3>
+                <strong id="tax">R$ 0,00</strong>
+                <p id="taxNote">Isenção estimada aplicada</p>
+              </article>
+            </div>
+
+            <div class="profit-card">
+              <div class="profit-heading">
+                <span>Lucro ou prejuízo líquido estimado</span>
+                <b id="resultStatus">LUCRO</b>
+              </div>
+              <strong id="netResult" class="net-result">+ R$ 417,72</strong>
+              <div class="return-line"><b id="returnPercent">+41,85%</b><span>sobre o valor aplicado</span></div>
+              <div class="result-meter" aria-hidden="true"><span id="resultMeter"></span></div>
+              <div class="result-detail"><span>Resultado antes do IR</span><b id="preTaxResult">+ R$ 417,72</b></div>
+              <div class="result-detail"><span>Patrimônio estimado*</span><b id="estimatedWealth">R$ 1.417,72</b></div>
+            </div>
+            <p class="tax-notice" id="taxNotice">Estimativa simplificada. Confira as regras fiscais antes de operar.</p>
+          </section>
+
+          <section class="panel scenarios-panel" aria-labelledby="scenarios-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">03 / TESTE DE CENÁRIOS</p>
+                <h2 id="scenarios-title">E se o preço mudar?</h2>
+              </div>
+            </div>
+            <div id="scenarios" class="scenario-list" role="list" aria-label="Resultados por cenário"></div>
+          </section>
+        </div>
+      </div>
+
+      <aside class="disclaimer" aria-labelledby="disclaimer-title">
+        <span class="info-icon" aria-hidden="true">i</span>
+        <div>
+          <h2 id="disclaimer-title">Importante sobre impostos</h2>
+          <p>Esta ferramenta oferece uma estimativa educacional, não faz apuração fiscal. Em regra, ganhos líquidos em ações são tributados a 15% em operações comuns e 20% em day trade. A isenção mensal de até R$ 20 mil pode valer para vendas de ações no mercado à vista em operações comuns; não se aplica a day trade. Ganhos na venda de cotas de FIIs são geralmente tributados a 20%, sem essa isenção. Custos, retenções, compensações e regras específicas podem mudar o resultado.</p>
+          <p class="official-links">Consulte as <a href="https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/pagamento/renda-variavel/bolsa-de-valores-1/bolsa-de-valores" target="_blank" rel="noopener noreferrer">orientações da Receita Federal para bolsa</a>, as <a href="https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/pagamento/renda-variavel/bolsa-de-valores-1/isencoes" target="_blank" rel="noopener noreferrer">regras de isenção</a> e as <a href="https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/pagamento/renda-variavel/fundos-de-investimento-no-brasil" target="_blank" rel="noopener noreferrer">regras para FIIs</a>.</p>
+          <small>*O patrimônio estimado soma o capital inicial ao resultado líquido e considera a sobra não investida. Não prevê rendimentos futuros.</small>
+        </div>
+      </aside>
+
+      <footer class="site-footer">
+        <span>© <span id="year"></span> SimulaBolsa</span>
+        <span>Simule cenários. Não é previsão de mercado.</span>
+      </footer>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
