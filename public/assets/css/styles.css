@@ -723,9 +723,9 @@ input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px 
 
 .quote-panel, .report-panel, .income-panel { margin-bottom: 16px; }
 .quote-panel .section-heading, .income-panel > .section-heading { margin-bottom: 17px; }
-.quote-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
-.quote-controls label, .report-filters label, .dividend-fields label { min-width: 0; display: flex; flex-direction: column; gap: 6px; color: #c5d0df; font-size: 11px; font-weight: 600; }
-.quote-controls input, .report-filters input, .dividend-fields input, .dividend-fields select {
+.quote-controls { display: flex; align-items: center; gap: 12px; }
+.report-filters label, .dividend-fields label { min-width: 0; display: flex; flex-direction: column; gap: 6px; color: #c5d0df; font-size: 11px; font-weight: 600; }
+.report-filters input, .dividend-fields input, .dividend-fields select {
   width: 100%;
   min-width: 0;
   height: 42px;
@@ -736,8 +736,8 @@ input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px 
   background: #0c1525;
   font: 600 13px var(--font);
 }
-.quote-controls input:focus, .report-filters input:focus, .dividend-fields input:focus, .dividend-fields select:focus { border-color: var(--accent); outline: 3px solid #55e0a318; outline-offset: 1px; }
-.quote-controls input::placeholder, .dividend-fields input::placeholder { color: #71829a; font-weight: 400; }
+.report-filters input:focus, .dividend-fields input:focus, .dividend-fields select:focus { border-color: var(--accent); outline: 3px solid #55e0a318; outline-offset: 1px; }
+.dividend-fields input::placeholder { color: #71829a; font-weight: 400; }
 .quote-controls .button { min-height: 42px; white-space: nowrap; }
 .quote-panel .field-help { margin-top: 10px; }
 .quote-status, .report-status { min-height: 1.5em; margin: 10px 0 0; color: #aab9cd; font-size: 11px; line-height: 1.6; }
@@ -787,7 +787,6 @@ input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px 
 }
 
 @media (max-width: 620px) {
-  .quote-controls { grid-template-columns: minmax(0, 1fr); }
   .quote-controls .button { width: 100%; }
   .report-heading { align-items: flex-start; flex-direction: column; }
   .report-heading .button { width: 100%; }

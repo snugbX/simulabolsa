@@ -1,62 +1,140 @@
 (() => {
-  const endpoint = 'https://brapi.dev/api/quote/';
+  const API_ENDPOINT = 'https://brapi.dev/api/v2/stocks/quote';
+  const MAX_SYMBOLS_PER_REQUEST = 20;
+  const PUBLIC_DEMO_TICKERS = new Set(['PETR4', 'VALE3', 'MGLU3', 'ITUB4']);
 
-  async function fetchQuote(ticker, token = '') {
-    const symbol = String(ticker || '').trim().toUpperCase();
-    if (!/^[A-Z0-9.-]{1,12}$/.test(symbol)) {
-      throw new TypeError('Ticker inválido.');
+  function makeRequestError(status, message, retryAfter = '') {
+    const error = new Error(message);
+    error.status = status;
+    error.retryAfter = retryAfter;
+    return error;
+  }
+
+  function statusMessage(status, body) {
+    if (status === 401) return 'A brapi recusou a chave BRAPI_TOKEN configurada no servidor.';
+    if (status === 403) return 'O plano da brapi não permite consultar um ou mais ativos.';
+    if (status === 404) return 'A brapi não encontrou cotações para os tickers informados.';
+    if (status === 429) return 'Limite de consultas da brapi atingido.';
+    if (status === 503 && body?.code === 'BRAPI_TOKEN_NOT_CONFIGURED') {
+      return 'O servidor de cotações ainda não tem BRAPI_TOKEN configurado.';
     }
+    if (status >= 500) return 'O serviço de cotações está indisponível. Tente novamente mais tarde.';
+    return typeof body?.message === 'string' && body.message
+      ? body.message
+      : 'Não foi possível consultar as cotações.';
+  }
 
-    const headers = { Accept: 'application/json' };
-    if (token) headers.Authorization = `Bearer ${token}`;
+  async function requestBatch(symbols, proxyUrl) {
+    const url = proxyUrl
+      ? new URL('/api/quotes', proxyUrl)
+      : new URL(API_ENDPOINT);
+    url.searchParams.set('symbols', symbols.join(','));
 
     let response;
     try {
-      response = await fetch(`${endpoint}${encodeURIComponent(symbol)}`, {
-        headers,
+      response = await fetch(url, {
+        headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
     } catch {
-      throw new Error('Não foi possível acessar a brapi. Verifique sua conexão e tente novamente.');
+      throw makeRequestError(0, 'Não foi possível acessar o serviço de cotações. Verifique sua conexão.');
     }
 
-    let data;
+    let body;
     try {
-      data = await response.json();
+      body = await response.json();
     } catch {
-      data = null;
+      body = null;
     }
 
     if (!response.ok) {
-      const error = new Error(response.status === 401 || response.status === 403
-        ? 'A brapi recusou a consulta. Confira o token e o acesso do seu plano.'
-        : response.status === 429
-          ? 'Limite de consultas da brapi atingido. Tente novamente após a renovação do limite.'
-          : 'A brapi não conseguiu retornar esta cotação. Confira o ticker e tente mais tarde.');
-      error.status = response.status;
-      throw error;
+      throw makeRequestError(
+        response.status,
+        statusMessage(response.status, body),
+        response.headers.get('Retry-After') || '',
+      );
     }
 
-    const quotes = Array.isArray(data?.results) ? data.results : [];
-    const quote = quotes.find((item) => String(item.symbol || '').toUpperCase() === symbol);
-    const price = Number(quote?.regularMarketPrice);
-    const priceCents = Math.round(price * 100);
+    return body;
+  }
 
-    if (!quote || !Number.isFinite(price) || price <= 0 || !Number.isSafeInteger(priceCents)) {
-      throw new Error(`A brapi não retornou um preço válido para ${symbol}.`);
+  function normalizeResponse(body, requestedSymbols) {
+    const results = Array.isArray(body?.results) ? body.results : [];
+    const requested = new Set(requestedSymbols);
+    const updates = [];
+    const received = new Set();
+    const invalid = new Set();
+
+    for (const result of results) {
+      const ticker = String(result?.requestedSymbol || result?.symbol || '').trim().toUpperCase();
+      if (!requested.has(ticker)) continue;
+
+      const quote = result?.data || result;
+      const price = quote?.regularMarketPrice;
+      if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) {
+        invalid.add(ticker);
+        continue;
+      }
+
+      const priceCents = Math.round(price * 100);
+      if (!Number.isSafeInteger(priceCents)) {
+        invalid.add(ticker);
+        continue;
+      }
+
+      const marketTime = typeof quote.regularMarketTime === 'string'
+        && Number.isFinite(Date.parse(quote.regularMarketTime))
+        ? quote.regularMarketTime
+        : typeof body.requestedAt === 'string' && Number.isFinite(Date.parse(body.requestedAt))
+          ? body.requestedAt
+          : null;
+
+      updates.push({ ticker, priceCents, marketTime });
+      received.add(ticker);
     }
 
     return {
-      symbol,
-      priceCents,
-      marketTime: typeof quote.regularMarketTime === 'string' && quote.regularMarketTime
-        ? quote.regularMarketTime
-        : typeof data.requestedAt === 'string' && data.requestedAt
-          ? data.requestedAt
-          : new Date().toISOString(),
+      updates,
+      missing: requestedSymbols.filter((ticker) => !received.has(ticker) || invalid.has(ticker)),
     };
   }
 
+  async function fetchQuotes(tickers) {
+    const symbols = [...new Set(tickers.map((ticker) => String(ticker || '').trim().toUpperCase()))];
+    if (symbols.length === 0 || symbols.some((ticker) => !/^[A-Z0-9][A-Z0-9.-]{0,11}$/.test(ticker))) {
+      throw new TypeError('Informe tickers válidos para consultar.');
+    }
+
+    const proxyUrl = String(window.SimulaBolsaConfig?.quotesApiUrl || '').trim().replace(/\/+$/, '');
+    let symbolsToFetch = symbols;
+    let missing = [];
+    let notQueried = [];
+
+    if (!proxyUrl) {
+      symbolsToFetch = symbols.filter((ticker) => PUBLIC_DEMO_TICKERS.has(ticker));
+      notQueried = symbols.filter((ticker) => !PUBLIC_DEMO_TICKERS.has(ticker));
+      if (symbolsToFetch.length === 0) {
+        throw makeRequestError(503, 'O proxy seguro ainda não foi configurado. Os outros ativos dependem do servidor de cotações.');
+      }
+    }
+
+    const updates = [];
+    for (let index = 0; index < symbolsToFetch.length; index += MAX_SYMBOLS_PER_REQUEST) {
+      const batch = symbolsToFetch.slice(index, index + MAX_SYMBOLS_PER_REQUEST);
+      try {
+        const body = await requestBatch(batch, proxyUrl);
+        const normalized = normalizeResponse(body, batch);
+        updates.push(...normalized.updates);
+        missing.push(...normalized.missing);
+      } catch (error) {
+        error.partialUpdates = updates;
+        throw error;
+      }
+    }
+
+    return { updates, missing: [...new Set(missing)], notQueried };
+  }
+
   window.SimulaBolsa = window.SimulaBolsa || {};
-  window.SimulaBolsa.quotes = Object.freeze({ fetchQuote });
+  window.SimulaBolsa.quotes = Object.freeze({ fetchQuotes });
 })();

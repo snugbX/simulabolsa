@@ -9,6 +9,7 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="./assets/css/styles.css">
     <script defer src="./assets/js/formatters.js"></script>
+    <script defer src="./assets/js/config.js"></script>
     <script defer src="./assets/js/quotes.js"></script>
     <script defer src="./assets/js/portfolio.js"></script>
     <script defer src="./assets/js/portfolio-insights.js"></script>
@@ -77,12 +78,9 @@
           <span class="heading-icon heading-icon-positive" aria-hidden="true">↻</span>
         </div>
         <div class="quote-controls">
-          <label for="quoteToken">Token da brapi (opcional)
-            <input id="quoteToken" name="quoteToken" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Cole seu token para consultar outros ativos">
-          </label>
           <button id="refreshQuotes" class="button button-secondary" type="button">Atualizar cotações</button>
         </div>
-        <p class="field-help">A chave é usada só nesta sessão e enviada à brapi por HTTPS; não é salva. Sem token, a consulta é limitada aos tickers de demonstração PETR4, VALE3, MGLU3, ITUB4, MXRF11 e HGLG11. No plano gratuito, ações podem ter cerca de 30 minutos de atraso; cotas de FIIs podem atualizar após o fechamento. Não são cotações em tempo real. <a href="https://brapi.dev/dashboard" target="_blank" rel="noopener noreferrer">Obter token</a> · <a href="https://brapi.dev/faq/qual-a-frequencia" target="_blank" rel="noopener noreferrer">Ver atraso e limites</a> · <a href="https://brapi.dev/docs/fiis" target="_blank" rel="noopener noreferrer">Dados de FIIs</a></p>
+        <p class="field-help">A atualização é manual e consulta os ativos em lote. A chave de acesso é mantida no servidor e nunca é enviada pelo navegador. As cotações podem ter atraso conforme o plano: ações gratuitas podem atrasar cerca de 30 minutos e indicadores de FIIs atualizam após o fechamento. <a href="https://brapi.dev/faq/qual-a-frequencia" target="_blank" rel="noopener noreferrer">Ver frequência e atraso</a></p>
         <p id="quoteStatus" class="quote-status" role="status" aria-live="polite">Os preços atuais continuam editáveis manualmente.</p>
       </section>
 

@@ -30,9 +30,10 @@
       ['other', KIND_LABELS.other],
     ],
   };
-  const FREE_DEMO_TICKERS = new Set(['PETR4', 'VALE3', 'MGLU3', 'ITUB4', 'MXRF11', 'HGLG11']);
   const $ = (id) => document.getElementById(id);
   let storage = getStorage();
+  let quoteRetryUntil = 0;
+  let quoteRetryTimer = 0;
   let storageDataUnreadable = false;
   let dividends = loadDividends();
   let editingDividendId = null;
@@ -488,58 +489,80 @@
     }
   }
 
+  function retryDelayMs(value) {
+    if (value) {
+      const seconds = Number(value);
+      if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+      const date = Date.parse(value);
+      if (Number.isFinite(date)) return Math.max(0, date - Date.now());
+    }
+    return 60_000;
+  }
+
+  function startQuoteCooldown(delayMs) {
+    const button = $('refreshQuotes');
+    quoteRetryUntil = Date.now() + delayMs;
+    button.disabled = true;
+
+    const updateStatus = () => {
+      const secondsLeft = Math.max(0, Math.ceil((quoteRetryUntil - Date.now()) / 1000));
+      if (secondsLeft === 0) {
+        window.clearInterval(quoteRetryTimer);
+        quoteRetryTimer = 0;
+        quoteRetryUntil = 0;
+        button.disabled = false;
+        setQuoteStatus('Já é possível tentar atualizar as cotações novamente.');
+        return;
+      }
+      setQuoteStatus(`Limite da brapi atingido. Aguarde ${formatNumber(secondsLeft)} s antes de tentar novamente.`, 'error');
+    };
+
+    window.clearInterval(quoteRetryTimer);
+    updateStatus();
+    quoteRetryTimer = window.setInterval(updateStatus, 1000);
+  }
+
   async function refreshQuotes() {
     const button = $('refreshQuotes');
     const positions = portfolio.getPositions();
     const tickers = [...new Set(positions.map((position) => position.ticker))];
-    const token = $('quoteToken').value.trim();
     if (tickers.length === 0) {
       setQuoteStatus('Cadastre uma posição antes de atualizar as cotações.', 'error');
       return;
     }
-
-    const allowed = token ? tickers : tickers.filter((ticker) => FREE_DEMO_TICKERS.has(ticker));
-    const needsToken = tickers.length - allowed.length;
-    if (allowed.length === 0) {
-      setQuoteStatus('Sem token, a brapi só libera os tickers de demonstração informados acima. Cole um token para consultar os demais ativos.', 'error');
+    if (Date.now() < quoteRetryUntil) {
+      setQuoteStatus(`Aguarde ${formatNumber(Math.ceil((quoteRetryUntil - Date.now()) / 1000))} s antes de consultar novamente.`, 'error');
       return;
     }
 
     button.disabled = true;
     button.textContent = 'Consultando…';
-    setQuoteStatus(`Consultando ${formatNumber(allowed.length)} ${allowed.length === 1 ? 'ativo' : 'ativos'} na brapi…`);
-
-    let updated = 0;
-    let latestTimestamp = '';
-    let firstError = '';
-    const quoteUpdates = [];
+    setQuoteStatus(`Consultando ${formatNumber(tickers.length)} ${tickers.length === 1 ? 'ativo' : 'ativos'} em lote…`);
     try {
-      for (const ticker of allowed) {
-        try {
-          const quote = await quoteProvider.fetchQuote(ticker, token);
-          quoteUpdates.push({ ticker, priceCents: quote.priceCents, marketTime: quote.marketTime });
-          updated += 1;
-          if (!latestTimestamp || Date.parse(quote.marketTime) > Date.parse(latestTimestamp)) latestTimestamp = quote.marketTime;
-        } catch (error) {
-          firstError = error.message || 'Não foi possível atualizar uma cotação.';
-          if ([401, 403, 429].includes(error.status)) break;
-        }
+      const result = await quoteProvider.fetchQuotes(tickers);
+      const updated = portfolio.updateQuotes(result.updates);
+      const timestamps = result.updates
+        .map((quote) => quote.marketTime)
+        .filter((value) => Number.isFinite(Date.parse(value || '')))
+        .sort((a, b) => Date.parse(a) - Date.parse(b));
+      const messages = [];
+      if (updated > 0) messages.push(`${formatNumber(updated)} ${updated === 1 ? 'cotação atualizada' : 'cotações atualizadas'}`);
+      if (timestamps.length > 0) messages.push(`horário informado pela fonte: ${formatDateTime(timestamps[timestamps.length - 1])}`);
+      if (result.missing.length > 0) messages.push(`sem preço válido para: ${result.missing.join(', ')}`);
+      if (result.notQueried.length > 0) messages.push(`aguardando configuração do proxy seguro para: ${result.notQueried.join(', ')}`);
+      if (messages.length === 0) messages.push('A brapi não retornou preços válidos para os ativos informados');
+      setQuoteStatus(`${messages.join('. ')}.`, result.missing.length === 0 && result.notQueried.length === 0 && updated > 0 ? 'success' : 'error');
+    } catch (error) {
+      if (error.partialUpdates?.length) portfolio.updateQuotes(error.partialUpdates);
+      if (error.status === 429) {
+        startQuoteCooldown(retryDelayMs(error.retryAfter));
+      } else {
+        setQuoteStatus(error.message || 'Não foi possível atualizar as cotações.', 'error');
       }
-      portfolio.updateQuotes(quoteUpdates);
     } finally {
-      button.disabled = false;
       button.textContent = 'Atualizar cotações';
+      if (Date.now() >= quoteRetryUntil) button.disabled = false;
     }
-
-    const messages = [];
-    if (updated > 0) {
-      messages.push(`${formatNumber(updated)} ${updated === 1 ? 'cotação atualizada' : 'cotações atualizadas'}`);
-      messages.push(`horário informado pela fonte: ${formatDateTime(latestTimestamp)}`);
-    }
-    if (needsToken > 0) messages.push(`${formatNumber(needsToken)} ${needsToken === 1 ? 'ativo exige' : 'ativos exigem'} token`);
-    if (firstError) messages.push(firstError);
-    if (messages.length === 0) messages.push('Nenhuma cotação foi atualizada. Confira os tickers e tente novamente.');
-    setQuoteStatus(`${messages.join('. ')}.`, updated > 0 && !firstError && needsToken === 0 ? 'success' : 'error');
   }
 
   function showToast(message) {
