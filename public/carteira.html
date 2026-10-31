@@ -9,7 +9,9 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="./assets/css/styles.css">
     <script defer src="./assets/js/formatters.js"></script>
+    <script defer src="./assets/js/quotes.js"></script>
     <script defer src="./assets/js/portfolio.js"></script>
+    <script defer src="./assets/js/portfolio-insights.js"></script>
   </head>
   <body>
     <header class="site-header">
@@ -28,7 +30,7 @@
       <section class="hero" aria-labelledby="page-title">
         <p class="eyebrow">ACOMPANHE SEUS ATIVOS</p>
         <h1 id="page-title">Sua carteira,<br><em>com visão clara.</em></h1>
-        <p class="hero-copy">Organize ações e FIIs, atualize os preços manualmente e acompanhe o resultado da sua carteira.</p>
+        <p class="hero-copy">Organize ações e FIIs, registre os proventos recebidos e acompanhe o resultado da carteira.</p>
       </section>
 
       <section class="portfolio-summary" aria-label="Resumo da carteira" aria-live="polite">
@@ -64,6 +66,24 @@
           <div class="allocation-label"><span>FIIs</span><strong id="fiisValue">R$ 0,00</strong><small id="fiisShare">0% da carteira</small></div>
           <div class="allocation-meter allocation-meter-fii" aria-hidden="true"><span id="fiisMeter"></span></div>
         </div>
+      </section>
+
+      <section class="panel quote-panel" aria-labelledby="quote-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">COTAÇÕES</p>
+            <h2 id="quote-title">Atualizar preços da carteira</h2>
+          </div>
+          <span class="heading-icon heading-icon-positive" aria-hidden="true">↻</span>
+        </div>
+        <div class="quote-controls">
+          <label for="quoteToken">Token da brapi (opcional)
+            <input id="quoteToken" name="quoteToken" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Cole seu token para consultar outros ativos">
+          </label>
+          <button id="refreshQuotes" class="button button-secondary" type="button">Atualizar cotações</button>
+        </div>
+        <p class="field-help">A chave é usada só nesta sessão e enviada à brapi por HTTPS; não é salva. Sem token, a consulta é limitada aos tickers de demonstração PETR4, VALE3, MGLU3, ITUB4, MXRF11 e HGLG11. No plano gratuito, ações podem ter cerca de 30 minutos de atraso; cotas de FIIs podem atualizar após o fechamento. Não são cotações em tempo real. <a href="https://brapi.dev/dashboard" target="_blank" rel="noopener noreferrer">Obter token</a> · <a href="https://brapi.dev/faq/qual-a-frequencia" target="_blank" rel="noopener noreferrer">Ver atraso e limites</a> · <a href="https://brapi.dev/docs/fiis" target="_blank" rel="noopener noreferrer">Dados de FIIs</a></p>
+        <p id="quoteStatus" class="quote-status" role="status" aria-live="polite">Os preços atuais continuam editáveis manualmente.</p>
       </section>
 
       <div class="portfolio-layout">
@@ -115,7 +135,7 @@
             <span id="storageBadge" class="storage-badge">Salva neste navegador</span>
           </div>
 
-          <p class="field-help holdings-help">Atualize o preço atual pelo botão “Editar”. As cotações não são buscadas automaticamente.</p>
+          <p class="field-help holdings-help">Use “Editar” para informar preços manualmente ou atualize vários ativos pelo painel de cotações.</p>
           <div id="emptyState" class="empty-state" hidden>
             <span class="empty-icon" aria-hidden="true">＋</span>
             <h3>Sua carteira está vazia</h3>
@@ -142,11 +162,166 @@
         </section>
       </div>
 
+      <section class="panel report-panel" aria-labelledby="report-title">
+        <div class="section-heading report-heading">
+          <div>
+            <p class="eyebrow">03 / ACOMPANHAMENTO</p>
+            <h2 id="report-title">Relatório da carteira</h2>
+          </div>
+          <button id="exportDividends" class="button button-secondary" type="button">Exportar proventos CSV</button>
+        </div>
+
+        <div class="report-filters">
+          <label for="reportStart">Proventos a partir de
+            <input id="reportStart" name="reportStart" type="date">
+          </label>
+          <label for="reportEnd">Até
+            <input id="reportEnd" name="reportEnd" type="date">
+          </label>
+          <p id="reportStatus" class="report-status" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="report-summary" aria-live="polite">
+          <article class="metric-card">
+            <h3>Lucro/prejuízo em aberto</h3>
+            <strong id="reportOpenResult">R$ 0,00</strong>
+            <p>Valor atual menos preço médio</p>
+          </article>
+          <article class="metric-card">
+            <h3>Proventos no período</h3>
+            <strong id="reportPeriodIncome">R$ 0,00</strong>
+            <p id="reportPeriodCount">Nenhum lançamento no filtro</p>
+          </article>
+          <article class="metric-card">
+            <h3>Proventos acumulados</h3>
+            <strong id="reportLifetimeIncome">R$ 0,00</strong>
+            <p>Todos os lançamentos registrados</p>
+          </article>
+        </div>
+
+        <p class="field-help report-disclaimer">O lucro/prejuízo é não realizado e usa o preço atual informado ou consultado. O filtro de datas se aplica aos proventos. Não inclui vendas encerradas, taxas ou impostos.</p>
+
+        <div class="report-tables">
+          <section aria-labelledby="assetReportTitle">
+            <div class="report-subheading">
+              <h3 id="assetReportTitle">Resultado por ativo</h3>
+              <span>Proventos no período selecionado</span>
+            </div>
+            <div id="reportAssetsEmpty" class="empty-state" hidden>
+              <p>Adicione ativos ou registre proventos para montar este relatório.</p>
+            </div>
+            <div id="reportAssetsWrap" class="table-scroll" hidden>
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Ativo</th>
+                    <th scope="col">Qtd.</th>
+                    <th scope="col">Investido</th>
+                    <th scope="col">Valor atual</th>
+                    <th scope="col">P/L em aberto</th>
+                    <th scope="col">Proventos</th>
+                  </tr>
+                </thead>
+                <tbody id="reportAssetsBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section aria-labelledby="monthlyReportTitle">
+            <div class="report-subheading">
+              <h3 id="monthlyReportTitle">Proventos por mês</h3>
+              <span>Por data de pagamento</span>
+            </div>
+            <div id="monthlyIncomeEmpty" class="empty-state" hidden>
+              <p>Os pagamentos registrados aparecerão aqui.</p>
+            </div>
+            <div id="monthlyIncomeWrap" class="table-scroll" hidden>
+              <table class="report-table monthly-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Mês</th>
+                    <th scope="col">Pagamentos</th>
+                    <th scope="col">Total recebido</th>
+                  </tr>
+                </thead>
+                <tbody id="monthlyIncomeBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="panel income-panel" aria-labelledby="income-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">04 / PROVENTOS</p>
+            <h2 id="income-title">Registrar recebimento</h2>
+          </div>
+          <span class="heading-icon" aria-hidden="true">＋</span>
+        </div>
+
+        <form id="dividendForm" novalidate>
+          <input id="dividendId" name="dividendId" type="hidden">
+          <div class="dividend-fields">
+            <label for="dividendTicker">Ativo / ticker
+              <input id="dividendTicker" name="dividendTicker" type="text" maxlength="12" placeholder="Ex.: MXRF11" autocomplete="off" required>
+            </label>
+            <label for="dividendAsset">Tipo de ativo
+              <select id="dividendAsset" name="dividendAsset">
+                <option value="fiis">FII</option>
+                <option value="stocks">Ação</option>
+              </select>
+            </label>
+            <label for="dividendKind">Tipo de provento
+              <select id="dividendKind" name="dividendKind"></select>
+            </label>
+            <label for="dividendDate">Data de pagamento
+              <input id="dividendDate" name="dividendDate" type="date" required>
+            </label>
+            <label for="dividendAmount">Valor recebido (R$)
+              <input id="dividendAmount" name="dividendAmount" type="number" min="0.01" step="0.01" placeholder="0,00" inputmode="decimal" required>
+            </label>
+          </div>
+          <p class="field-help">Informe o total que entrou na conta, não o valor por cota. O registro é manual e pode ser editado depois.</p>
+          <p id="dividendFormMessage" class="form-message" role="status" aria-live="polite"></p>
+          <div class="actions position-actions">
+            <button id="cancelDividendEdit" class="button button-secondary" type="button" hidden>Cancelar edição</button>
+            <button id="saveDividend" class="button button-primary" type="submit">Registrar provento</button>
+          </div>
+        </form>
+
+        <div class="dividend-history">
+          <div class="report-subheading">
+            <h3>Histórico de recebimentos</h3>
+            <span id="dividendCount">Nenhum lançamento</span>
+          </div>
+          <div id="dividendEmpty" class="empty-state" hidden>
+            <span class="empty-icon" aria-hidden="true">＋</span>
+            <h3>Nenhum provento registrado</h3>
+            <p>Cadastre rendimentos de FIIs, dividendos ou JCP para acompanhar os recebimentos.</p>
+          </div>
+          <div id="dividendTableWrap" class="table-scroll" hidden>
+            <table class="report-table dividend-table">
+              <thead>
+                <tr>
+                  <th scope="col">Pagamento</th>
+                  <th scope="col">Ativo</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Valor recebido</th>
+                  <th scope="col"><span class="visually-hidden">Ações</span></th>
+                </tr>
+              </thead>
+              <tbody id="dividendBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <aside class="disclaimer" aria-labelledby="portfolio-note-title">
         <span class="info-icon" aria-hidden="true">i</span>
         <div>
           <h2 id="portfolio-note-title">Sobre os valores da carteira</h2>
-          <p>Os resultados usam os preços e quantidades informados por você. Não incluem taxas, impostos, dividendos, rendimentos de FIIs nem cotações em tempo real. Use os dados como organização pessoal, não como apuração fiscal ou recomendação de investimento.</p>
+          <p>Os resultados usam os preços e quantidades informados por você ou consultados na brapi, e os proventos cadastrados manualmente. As cotações podem ter atraso e não são tempo real. Os dados ficam neste navegador e não sincronizam entre dispositivos. As estimativas não incluem vendas já encerradas, taxas ou impostos; use-as para organização pessoal, não como apuração fiscal ou recomendação de investimento.</p>
         </div>
       </aside>
 

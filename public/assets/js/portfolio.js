@@ -59,6 +59,9 @@
       quantity: Math.round(quantity * 10_000) / 10_000,
       averagePriceCents,
       currentPriceCents,
+      quoteUpdatedAt: typeof value.quoteUpdatedAt === 'string' && Number.isFinite(Date.parse(value.quoteUpdatedAt))
+        ? value.quoteUpdatedAt
+        : null,
     };
     if (
       !Number.isSafeInteger(Math.round(position.quantity * position.averagePriceCents))
@@ -104,7 +107,7 @@
   function setStorageStatus(isAvailable) {
     $('storageBadge').textContent = isAvailable ? 'Salva neste navegador' : 'Salva só nesta sessão';
     $('storageMessage').textContent = isAvailable
-      ? 'Os dados ficam neste navegador e não são enviados para um servidor.'
+      ? 'Os dados da carteira e dos proventos ficam neste navegador e não são enviados para um servidor.'
       : 'O armazenamento local está indisponível. As alterações ficam apenas enquanto esta página estiver aberta.';
     $('storageMessage').classList.toggle('is-warning', !isAvailable);
   }
@@ -226,6 +229,7 @@
 
     body.replaceChildren(fragment);
     renderSummary();
+    window.dispatchEvent(new CustomEvent('simulabolsa:positions-changed'));
   }
 
   function setFormMessage(message, isError = false) {
@@ -267,6 +271,7 @@
       quantity: Number.isFinite(quantity) ? Math.round(quantity * 10_000) / 10_000 : quantity,
       averagePriceCents: toCents($('averagePrice').value),
       currentPriceCents: toCents($('currentPrice').value),
+      quoteUpdatedAt: null,
     };
   }
 
@@ -298,6 +303,7 @@
     );
     existing.quantity = Math.round(combinedQuantity * 10_000) / 10_000;
     existing.currentPriceCents = position.currentPriceCents;
+    existing.quoteUpdatedAt = null;
     return `${position.ticker} consolidado com preço médio ponderado.`;
   }
 
@@ -345,6 +351,26 @@
     window.clearTimeout(showToast.timeoutId);
     showToast.timeoutId = window.setTimeout(() => toast.classList.remove('is-visible'), 2400);
   }
+
+  window.SimulaBolsa = window.SimulaBolsa || {};
+  window.SimulaBolsa.portfolio = Object.freeze({
+    getPositions: () => positions.map((position) => ({ ...position })),
+    getPositionValues,
+    updateQuotes(quotes) {
+      const byTicker = new Map(quotes.map((quote) => [quote.ticker, quote]));
+      let changed = 0;
+      positions = positions.map((position) => {
+        const quote = byTicker.get(position.ticker);
+        if (!quote) return position;
+        changed += 1;
+        return { ...position, currentPriceCents: quote.priceCents, quoteUpdatedAt: quote.marketTime };
+      });
+      if (changed === 0) return 0;
+      savePositions();
+      renderPositions();
+      return changed;
+    },
+  });
 
   $('positionForm').addEventListener('submit', handleSubmit);
   $('cancelEdit').addEventListener('click', resetForm);

@@ -1,6 +1,6 @@
 # SimulaBolsa
 
-Simulador estático e responsivo, em português, para estimar uma operação de compra e venda de ações ou cotas de FIIs. Exibe quantidade inteira, capital aplicado, sobra do orçamento, resultado líquido, estimativa de IR e cenários de preço.
+Aplicação estática e responsiva, em português, com simulador de compra e venda de ações e FIIs e uma área local para gerenciar posições, proventos e relatórios da carteira.
 
 ## Estrutura
 
@@ -14,14 +14,16 @@ Simulador estático e responsivo, em português, para estimar uma operação de 
 │   │       ├── calculator.js            # cálculos, sem dependência do DOM
 │   │       ├── formatters.js             # conversão e formatação de valores
 │   │       ├── main.js                   # eventos do simulador
-│   │       └── portfolio.js              # cadastro e resumo da carteira
+│   │       ├── portfolio.js              # cadastro e resumo das posições
+│   │       ├── portfolio-insights.js     # proventos, relatórios e cotações
+│   │       └── quotes.js                 # cliente da API de cotações brapi
 │   ├── favicon.svg
 │   ├── carteira.html                     # gerenciamento da carteira
 │   └── index.html
 └── README.md
 ```
 
-O projeto não usa framework, bibliotecas externas, etapas de compilação ou fontes remotas. Scripts adiados mantêm a lógica separada da interface e também permitem abrir o simulador localmente. Os valores monetários são calculados em centavos inteiros.
+O projeto não usa framework, bibliotecas externas nem etapas de compilação. A interface não carrega fontes externas; a página da carteira pode consultar cotações na brapi quando o usuário solicitar. Scripts adiados mantêm a lógica separada da interface e também permitem abrir o simulador localmente. Os valores monetários são calculados em centavos inteiros.
 
 ## Visualizar localmente
 
@@ -55,6 +57,10 @@ O caminho público padrão será `https://SEU-USUARIO.github.io/NOME-DO-REPOSITO
 
 ## Carteira
 
-A página `public/carteira.html` permite cadastrar, editar e remover posições de ações e FIIs, atualizar preços manualmente e acompanhar valores e resultados. Os dados são guardados no armazenamento local do navegador e não são enviados a um servidor; eles não sincronizam entre dispositivos e podem ser apagados ao limpar os dados do navegador.
+A página `public/carteira.html` permite cadastrar, editar e remover posições de ações e FIIs, registrar recebimentos de rendimentos, dividendos e JCP, consultar um resumo por período, comparar o resultado em aberto por ativo e exportar os proventos filtrados em CSV. As vendas encerradas não são registradas, então o resultado da carteira representa lucro ou prejuízo não realizado.
+
+Posições e proventos ficam no armazenamento local do navegador; não são enviados a um servidor, não sincronizam entre dispositivos e podem ser apagados ao limpar os dados do navegador. O registro de proventos é manual e guarda o valor total recebido e a data de pagamento.
+
+O painel de cotações usa a API da [brapi](https://brapi.dev/docs/acoes). A atualização é manual; o aplicativo não consulta a API em segundo plano. Sem token, a brapi libera tickers de demonstração, incluindo PETR4, VALE3, MGLU3, ITUB4, MXRF11 e HGLG11. Para outros ativos, informe seu token no navegador. O token é enviado à brapi por HTTPS e não é gravado no armazenamento local. As cotações não são em tempo real: no plano gratuito, ações podem ter atraso aproximado de 30 minutos e os preços de FIIs podem atualizar após o fechamento. O aplicativo mantém o último horário retornado pela fonte junto ao preço consultado.
 
 As regras tributárias podem mudar. Consulte as [orientações da Receita Federal para bolsa](https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/pagamento/renda-variavel/bolsa-de-valores-1/bolsa-de-valores), as [regras de isenção](https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/pagamento/renda-variavel/bolsa-de-valores-1/isencoes) e as [regras para FIIs](https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/pagamento/renda-variavel/fundos-de-investimento-no-brasil). A ferramenta é educativa e não substitui apuração fiscal nem orientação profissional.

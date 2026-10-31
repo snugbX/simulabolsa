@@ -720,3 +720,97 @@ input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px 
     animation-iteration-count: 1 !important;
   }
 }
+
+.quote-panel, .report-panel, .income-panel { margin-bottom: 16px; }
+.quote-panel .section-heading, .income-panel > .section-heading { margin-bottom: 17px; }
+.quote-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+.quote-controls label, .report-filters label, .dividend-fields label { min-width: 0; display: flex; flex-direction: column; gap: 6px; color: #c5d0df; font-size: 11px; font-weight: 600; }
+.quote-controls input, .report-filters input, .dividend-fields input, .dividend-fields select {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 10px;
+  border: 1px solid #2a3951;
+  border-radius: 9px;
+  color: #f1f5fb;
+  background: #0c1525;
+  font: 600 13px var(--font);
+}
+.quote-controls input:focus, .report-filters input:focus, .dividend-fields input:focus, .dividend-fields select:focus { border-color: var(--accent); outline: 3px solid #55e0a318; outline-offset: 1px; }
+.quote-controls input::placeholder, .dividend-fields input::placeholder { color: #71829a; font-weight: 400; }
+.quote-controls .button { min-height: 42px; white-space: nowrap; }
+.quote-panel .field-help { margin-top: 10px; }
+.quote-status, .report-status { min-height: 1.5em; margin: 10px 0 0; color: #aab9cd; font-size: 11px; line-height: 1.6; }
+.quote-status.is-success { color: var(--accent); }
+.quote-status.is-error, .report-status.is-error { color: var(--negative); }
+.button:disabled { opacity: 0.6; cursor: wait; }
+
+.report-heading { align-items: center; }
+.report-heading .button { flex: 0 0 auto; }
+.report-filters { display: grid; grid-template-columns: repeat(2, minmax(150px, 220px)) minmax(0, 1fr); align-items: end; gap: 12px; margin-bottom: 14px; }
+.report-filters .report-status { margin: 0; }
+.report-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.report-summary .metric-card { min-width: 0; padding: 15px; border: 1px solid #293850; border-radius: 13px; background: linear-gradient(150deg, #162135, #101a2a); }
+.report-summary h3 { margin: 0; color: #9eacc0; font-size: 11px; font-weight: 500; }
+.report-summary strong { display: block; margin: 7px 0 4px; font-size: clamp(19px, 2vw, 25px); font-variant-numeric: tabular-nums; }
+.report-summary p { margin: 0; color: var(--muted); font-size: 10px; }
+.report-disclaimer { margin-top: 11px; }
+.report-tables { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(250px, 0.8fr); gap: 22px; margin-top: 22px; }
+.report-subheading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.report-subheading h3 { margin: 0; font: 700 14px var(--display); }
+.report-subheading > span { color: var(--muted); font-size: 9px; text-align: right; }
+.report-table { width: 100%; border-collapse: collapse; color: #d8e1ee; font-size: 10px; }
+.report-table th, .report-table td { padding: 10px 8px; border-bottom: 1px solid #25344a; text-align: right; white-space: nowrap; }
+.report-table thead th { color: #8495ad; font-size: 9px; font-weight: 700; }
+.report-table thead th:first-child, .report-table tbody th { text-align: left; }
+.report-table tbody th { font-weight: 500; }
+.report-table tbody td { font-variant-numeric: tabular-nums; }
+.report-table .holding-asset strong, .report-table .holding-asset .asset-tag { display: block; }
+.report-table .holding-asset strong { color: #f1f5fb; font-size: 11px; }
+.report-table .holding-actions { display: flex; justify-content: flex-end; gap: 5px; }
+.report-table tbody tr:last-child th, .report-table tbody tr:last-child td { border-bottom: 0; }
+.income-panel form { max-width: 900px; }
+.dividend-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.dividend-fields select { cursor: pointer; }
+.dividend-fields option { color: #f1f5fb; background: #111a2b; }
+.income-panel .field-help { margin-top: 8px; }
+.dividend-history { margin-top: 27px; padding-top: 19px; border-top: 1px solid #26344a; }
+.income-panel .empty-state { margin-top: 10px; }
+
+@media (max-width: 900px) {
+  .report-tables { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .dividend-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dividend-fields label:first-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 620px) {
+  .quote-controls { grid-template-columns: minmax(0, 1fr); }
+  .quote-controls .button { width: 100%; }
+  .report-heading { align-items: flex-start; flex-direction: column; }
+  .report-heading .button { width: 100%; }
+  .report-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .report-filters .report-status { grid-column: 1 / -1; }
+  .report-summary { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .report-summary .metric-card { padding: 13px; }
+  .report-summary strong { margin: 5px 0; font-size: 22px; }
+  .report-subheading { align-items: flex-start; flex-direction: column; gap: 3px; }
+  .report-subheading > span { text-align: left; }
+  .report-table, .report-table tbody, .report-table tr, .report-table td, .report-table th { display: block; }
+  .report-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); clip-path: inset(50%); }
+  .report-table tbody { display: grid; gap: 10px; }
+  .report-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; padding: 10px 12px; border: 1px solid #29384f; border-radius: 12px; background: #111b2c; }
+  .report-table tbody th, .report-table tbody td { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid #25344a; text-align: right; white-space: normal; }
+  .report-table tbody th { grid-column: 1 / -1; }
+  .report-table tbody td::before { content: attr(data-label); color: #8495ad; font-size: 9px; text-align: left; }
+  .report-table tbody td.holding-actions { grid-column: 1 / -1; justify-content: flex-end; border-bottom: 0; }
+  .report-table tbody td.holding-actions::before { margin-right: auto; }
+  .report-table tbody tr:last-child th, .report-table tbody tr:last-child td { border-bottom: 1px solid #25344a; }
+  .report-table tbody tr:last-child td.holding-actions { border-bottom: 0; }
+  .report-table tbody tr:last-child th { border-bottom: 1px solid #25344a; }
+  .report-table .holding-asset { grid-column: 1 / -1; }
+  .report-table .holding-actions { gap: 6px; }
+  .report-table .table-action { padding: 7px 10px; }
+}
